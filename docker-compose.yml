@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: api
+    build:
+      dockerfile: ./infra/rust/Dockerfile
+      context: .
+    ports:
+      - "8080:3000"
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: mysql
+    build:
+      dockerfile: ./infra/mysql/Dockerfile
+      context: .
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment: 
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-rust_practice}
+      - MYSQL_USER=${MYSQL_USER:-local_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-local_pass}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-local_pass}
+
+  # webserver:
+  #   image: nginx:1.23.3-alpine-slim
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./webserver:/etc/nginx/conf.d
