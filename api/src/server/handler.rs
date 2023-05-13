@@ -1,5 +1,4 @@
 use axum::{
-    extract,
     response,
     response::IntoResponse,
     Json,
@@ -10,12 +9,25 @@ use tower::ServiceExt;
 use tower_http::services::ServeDir;
 use serde::Deserialize;
 
-use super::response::*;
+// use super::response::*;
+
+use diesel::prelude::*;
+use diesel::{insert_into, delete, update};
+use crate::infrastructures::*;
+
+use crate::infrastructures::repository::users::{User, NewUser};
+use crate::infrastructures::database::schema::users::dsl::*;
 
 #[derive(Deserialize)]
 pub struct LectureRequest {
     url: String,
     tags: String
+}
+
+#[derive(Deserialize)]
+pub struct UserReq {
+    name: String,
+    email: String
 }
 
 pub async fn index(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, String)> {
@@ -48,15 +60,122 @@ async fn get_static_file(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, Str
     }
 }
 
-pub async fn store(extract::Json(post): extract::Json<LectureRequest>) -> response::Json<Lecture> {
-    response::Json(Lecture::new(post.url, post.tags))
-}
-
-pub async fn healthcheck() -> impl IntoResponse {
+pub async fn show_users() -> impl IntoResponse  {
 
     let content = serde_json::json!({
         "message": "OK".to_string()
     });
+
+    let connection = &mut connection::establish_connection();
+    let results = users
+        .load::<User>(connection)
+        .expect("Error loading posts");
+
+    println!("Displaying {} posts", results.len());
+    for user in results {
+        println!("{}", user.name);
+        println!("--------------");
+        println!("{}", user.email);
+    }
+
+
+    Json(content)
+}
+
+
+pub async fn store(Json(request): Json<UserReq>) -> impl IntoResponse  {
+
+    let entity = NewUser::new(request.name, request.email);
+
+    let connection = &mut connection::establish_connection();
+    
+    
+    let result = insert_into(users)
+        .values(entity)
+        .execute(connection);
+
+    match result {
+        Ok(_) => return (
+            StatusCode::OK,
+            "OK"
+        ),
+        Err(err) => {
+            eprintln!("{:?}", err);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something went wrong..."
+            )
+        }
+    }
+}
+
+pub async fn delete_user(Json(request): Json<UserReq>) -> impl IntoResponse  {
+
+    // let entity = NewUser::new(request.name, request.email);
+
+    let connection = &mut connection::establish_connection();
+
+    let data = users.select(id).filter(name.eq(request.name))
+        .first::<i32>(connection);
+
+    match data {
+        Ok(num) => {
+            let result = delete(users.filter(id.eq(num)))
+                .execute(connection);
+
+            match result {
+                Ok(_) => return (
+                    StatusCode::OK,
+                    "OK"
+                ),
+                Err(err) => {
+                    eprintln!("{:?}", err);
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Something went wrong..."
+                    )
+                }
+            }
+        },
+        Err(err) => {
+            eprintln!("{:?}", err);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something went wrong..."
+            )
+        }
+    }
+
+
+
+}
+
+pub async fn update_user(Json(request): Json<UserReq>) -> impl IntoResponse  {
+
+    let connection = &mut connection::establish_connection();
+        
+    let result = update(users.find(1))
+        .set(name.eq("newname"))
+        .get_result::<User>(connection);
+
+    match result {
+        Ok(_) => return (
+            StatusCode::OK,
+            "OK"
+        ),
+        Err(err) => {
+            eprintln!("{:?}", err);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something went wrong..."
+            )
+        }
+    }
+}
+
+pub async fn healthcheck() -> impl IntoResponse {
+
+    let content = "Thank you";
 
     Json(content)
 }

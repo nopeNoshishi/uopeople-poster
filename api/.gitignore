@@ -1,4 +1,5 @@
 /target
+/public/index.html
 *.http
 Cargo.lock
 .DS_Store

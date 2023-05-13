@@ -9,7 +9,7 @@ up-d:
 restart:
 	docker compose down --remove-orphans
 	docker compose build --force-rm
-	docker compose --env-file .env.${mode} up -d
+	docker compose --env-file .env.${mode} up
 down:
 	docker compose down --remove-orphans
 ps:
@@ -25,7 +25,7 @@ web:
 
 # Mysql
 db:
-	docker compose exec mysql bash
+	docker compose exec db bash
 
 db-sql:
-	docker compose exec mysql bash -c 'mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE'
+	docker compose exec db bash -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB'

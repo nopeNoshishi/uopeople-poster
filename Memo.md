@@ -32,3 +32,17 @@ Mysql
 認証
 Keycloak
 
+## database
+- ブログ情報(articles)
+    - id
+    - url
+    - tag
+- ブログ評価情報(informations_evaluation)
+    - id
+    - information_id
+    - user_id
+    - eval
+- ユーザー情報(users)
+    - id
+    - name
+    - email

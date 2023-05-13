@@ -15,8 +15,9 @@ RUN cargo build --release
 # Deploy
 FROM debian:buster-slim
 
+RUN apt-get update && apt-get install -y libpq-dev
+
 RUN mkdir -p usr/src/app
 COPY --from=builder /api/target/release/api usr/src/app/api
 WORKDIR /usr/src/app
-ADD ./api/public ./public
 CMD [ "./api" ]

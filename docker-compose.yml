@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   web:
@@ -7,28 +7,36 @@ services:
       dockerfile: ./infra/rust/Dockerfile
       context: .
     ports:
-      - "8080:3000"
+      - ${API_PORT:-8080}:3000
     depends_on:
-      - mysql
-
-  mysql:
-    container_name: mysql
-    build:
-      dockerfile: ./infra/mysql/Dockerfile
-      context: .
-    ports:
-      - "3306:3306"
+      - db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-local_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pass}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-rust_practice}
     volumes:
-      - ./mysql:/var/lib/mysql
-    environment: 
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-rust_practice}
-      - MYSQL_USER=${MYSQL_USER:-local_user}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-local_pass}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-local_pass}
+      - ./api/frontend/public:/usr/src/app/public
+    networks:
+      - app_network
 
-  # webserver:
-  #   image: nginx:1.23.3-alpine-slim
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./webserver:/etc/nginx/conf.d
+  db:
+    container_name: postgres
+    build:
+      dockerfile: ./infra/postgres/Dockerfile
+      context: .
+    ports: 
+      - ${POSTGRES_PORT:-5432}:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-local_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pass}
+      POSTGRES_INITDB_ARGS: --encoding=UTF-8
+      POSTGRES_DB: ${POSTGRES_DB:-rust_practice}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

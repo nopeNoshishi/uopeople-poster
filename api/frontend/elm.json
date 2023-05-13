@@ -23,5 +23,10 @@
     "test-dependencies": {
         "direct": {},
         "indirect": {}
+    },
+    "output": {
+        "main": {
+            "html": "public/index.html"
+        }
     }
 }

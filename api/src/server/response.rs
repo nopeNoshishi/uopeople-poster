@@ -6,11 +6,11 @@ pub struct Lecture {
     tags: String
 }
 
-impl Lecture {
-    pub fn new(url: String, tags: String) -> Self {
-        Lecture {
-            url,
-            tags
-        }
-    }
-}
+// impl Lecture {
+//     pub fn new(url: String, tags: String) -> Self {
+//         Lecture {
+//             url,
+//             tags
+//         }
+//     }
+// }

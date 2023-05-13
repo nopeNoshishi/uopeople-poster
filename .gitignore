@@ -1,3 +1,4 @@
 *.http
-/mysql
+/postgres
 .DS_Store
+/tmp
