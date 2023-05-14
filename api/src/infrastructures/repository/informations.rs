@@ -1,13 +1,38 @@
 use super::super::database::schema::*;
 use diesel::prelude::*;
+use diesel::result::QueryResult;
 use chrono::NaiveDateTime;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Insertable)]
 #[table_name = "informations"]
 pub struct NewInformationEntity {
-    pub url: String,
-    pub tag: String,
-    pub title: Option<String>,
+    id: Option<i64>,
+    url: String,
+    tag: String,
+    title: Option<String>,
+}
+
+impl NewInformationEntity {
+
+    pub fn new(id: Option<i64>, url: String, tag: String, title: Option<String>) -> Self {
+        Self { id, url, tag, title }
+    }
+
+    pub fn get_id(&self) -> Option<i64> {
+        self.id
+    }
+
+    pub fn get_url(&self) -> String {
+        self.url.to_owned()
+    }
+
+    pub fn get_tag(&self) -> String {
+        self.tag.to_owned()
+    }
+
+    pub fn get_title(&self) -> Option<String> {
+        self.title.to_owned()
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Queryable)]
@@ -19,92 +44,21 @@ pub struct InformationEntity {
     pub created_at: NaiveDateTime
 }
 
-// impl NewInformationEntity {
-//     fn from(model: &Information) -> Self {
-//         Self {
-//             url: model.url.to_owned(),
-//             tag: model.tag.to_owned(),
-//         }
-//     }
-// }
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct InformationId {
+    pub id: i64,
+}
 
-// #[derive(Debug, Clone, Eq, PartialEq, Hash, Queryable, Identifiable, AsChangeset)]
-// #[table_name = informations]
-// pub struct InformationEntity  {
-//     pub id: i32,
-//     pub url: String,
-//     pub tag: String,
-// }
+impl InformationId {
+    pub fn get(&self) -> i64 {
+        self.id
+    }
+}
 
-// impl InformationEntity {
-//     fn from(model: &Information) -> Self {
-//         Self {
-//             id: model.id.get(),
-//             url: model.url.to_owned(),
-//             tag: model.tag.to_owned(),
-//         }
-//     }
-
-//     fn of(&self) -> Information {
-//         Information {
-//             id: InformationId::new(self.id),
-//             url: self.url.to_owned(),
-//             tag: self.tag.to_owned(),
-//         }
-//     }
-// }
-
-// pub struct InformationRepositoryImpl {}
-
-// impl InformationRepository for InformationRepositoryImpl {
-//     fn find_by_id(&self, information_id: InformationId) -> Result<Information> {
-//         use super::super::database::schema::informations::dsl;
-
-//         let conn = &mut  connection::establish_connection();
-//         let entity: InformationEntity = dsl::informations
-//             .filter(informations::id.eq(information_id.get()))
-//             .get_result(conn)?;
-
-//         Ok(entity.of())
-//     }
-
-//     fn list(&self) -> Result<Vec<Information>> {
-//         use super::super::database::schema::informations::dsl;
-
-//         let query = dsl::informations.into_boxed();
-//         let conn = &mut connection::establish_connection();
-//         let results: Vec<InformationEntity> = query.limit(100).load(conn)?;
-
-//         Ok(results.into_iter().map(|e| e.of()).collect())
-//     }
-
-//     fn insert(&self, information: &Information) -> Result<()> {
-//         use super::super::database::schema::informations::dsl;
-
-//         let entity = NewInformationEntity::from(information);
-//         let conn = &mut connection::establish_connection();
-//         diesel::insert_into(dsl::informations)
-//             .values(entity)
-//             .execute(conn)?;
-
-//         Ok(())
-//     }
-
-//     fn update(&self, document: &Information) -> Result<()> {
-//         let entity = InformationEntity::from(document);
-//         let conn = &mut connection::establish_connection();
-//         diesel::update(Information::url)
-//             .set(&entity)
-//             .execute(&conn)?;
-
-//         Ok(())
-//     }
-
-//     fn delete(&self, Information: &Information) -> Result<()> {
-//         let entity = InformationEntity::from(Information);
-//         let conn = &mut connection::establish_connection();
-//         diesel::delete(&entity).execute(conn)?;
-
-//         Ok(())
-//     }
-// }
+pub trait InformationRepository {
+    fn find_by_id(&self, information_id: InformationId) -> QueryResult<InformationEntity>;
+    fn list(&self) -> QueryResult<Vec<InformationEntity>>;
+    fn insert(&self, new_information_entity: &NewInformationEntity) -> QueryResult<i64>;
+    fn update(&self, new_information_entity: &NewInformationEntity) -> QueryResult<InformationEntity>;
+    fn delete(&self, information: &InformationId) -> QueryResult<usize>;
+}

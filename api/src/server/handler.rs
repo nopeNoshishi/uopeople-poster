@@ -52,11 +52,7 @@ pub async fn healthcheck() -> impl IntoResponse {
 
 pub async fn insert_new_info(Json(request): Json<InfoRequest>) ->impl IntoResponse {
 
-    let new_info = NewInformationEntity {
-        url: request.url,
-        tag: request.tag,
-        title: request.title
-    };
+    let new_info = NewInformationEntity::from(request);
 
     let result = post_document(&new_info);
 
@@ -97,6 +93,7 @@ pub async fn get_infos() -> Result<impl IntoResponse, impl IntoResponse>  {
 
 pub async fn update_info(Json(request): Json<InfoUpdateRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
 
+    // let new_entity = NewInformationEntity::from(request);
     let result = update_document(
         request.id, request.url, request.tag, request.title
     );
@@ -105,9 +102,7 @@ pub async fn update_info(Json(request): Json<InfoUpdateRequest>) -> Result<impl 
         Ok(info) => { 
 
             let json = JsonInfoResponse::from(info);
-
-            let tmp: String = format!("Update id: {} -> {:?}", request.id, json);
-            info!("{}", tmp);
+            info!("Inserted : {:?}", json);
             
             Ok ((StatusCode::OK,  Json(json)))
         }
@@ -118,14 +113,17 @@ pub async fn update_info(Json(request): Json<InfoUpdateRequest>) -> Result<impl 
     }
 }
 
-pub async fn delete_info(Json(request): Json<InfoDeleteRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
+pub async fn delete_info(Json(request): Json<InformationIdRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
 
     let result = delete_document(request.id);
 
     match result {
         Ok(num) => { 
-
-            info!("{}", num);
+            match num {
+                1 => info!("Delete!"),
+                _ => info!("No content!"),
+            }
+            
             
             Ok ((StatusCode::OK,  Json(num)))
         }

@@ -1,54 +1,62 @@
-use std::marker::PhantomData;
-use anyhow::Result;
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub struct Id<T> {
-    id: i32,
-    _phantom: PhantomData<T>,
+use crate::infrastructures::repository::informations::*;
+use diesel::{insert_into, update, delete};
+use diesel::prelude::*;
+use diesel::result::QueryResult;
+use diesel::RunQueryDsl;
+use crate::infrastructures::*;
+
+pub struct InformationRepositoryImpl {
+    pub database: String,
 }
 
-impl<T> Id<T> {
-    pub fn new(id: i32) -> Self {
-        Self {
-            id,
-            _phantom: PhantomData,
-        }
+impl InformationRepository for InformationRepositoryImpl {
+    fn find_by_id(&self, information_id: InformationId) -> QueryResult<InformationEntity> {
+        use crate::infrastructures::database::schema::informations::dsl;
+
+        let conn = &mut connection::establish_connection();
+
+        dsl::informations.find(information_id.get()).first(conn)
     }
 
-    pub fn get(&self) -> i32 {
-        self.id
+    fn list(&self) -> QueryResult<Vec<InformationEntity>> {
+        use crate::infrastructures::database::schema::informations::dsl;
+
+        let conn = &mut connection::establish_connection();
+    
+        dsl::informations.load(conn)
     }
-}
 
-impl<T> Default for Id<T> {
-    fn default() -> Self {
-        Id::new(0)
+    fn insert(&self, new_information_entity: &NewInformationEntity) -> QueryResult<i64> {
+        use crate::infrastructures::database::schema::informations::dsl;
+
+        let conn = &mut connection::establish_connection();
+    
+        insert_into(dsl::informations)
+            .values(new_information_entity)
+            .returning(dsl::id)
+            .get_result(conn)
     }
-}
 
-pub type InformationId = Id<Information>;
+    fn update(&self, new_information_entity: &NewInformationEntity) -> QueryResult<InformationEntity> {
+        use crate::infrastructures::database::schema::informations::dsl;
 
-#[derive(Debug, Clone)]
-pub struct Information {
-    pub id: InformationId,
-    pub url: String,
-    pub tag: String,
-}
-
-impl Information {
-    pub fn create(url: String, tag: String) -> Self {
-        Self {
-            id: Default::default(),
-            url,
-            tag,
-        }
+        let conn = &mut connection::establish_connection();
+            
+        update(dsl::informations.find(new_information_entity.get_id().unwrap()))
+            .set((
+                dsl::url.eq(new_information_entity.get_url()),
+                 dsl::tag.eq(new_information_entity.get_tag()),
+                  dsl::title.eq(new_information_entity.get_title())))
+            .get_result(conn)
     }
-}
 
-pub trait InformationRepository {
-    fn find_by_id(&self, information_id: InformationId) -> Result<Information>;
-    fn list(&self) -> Result<Vec<Information>>;
-    fn insert(&self, information: &Information) -> Result<()>;
-    fn update(&self, information: &Information) -> Result<()>;
-    fn delete(&self, information: &Information) -> Result<()>;
+    fn delete(&self, information_id: &InformationId) -> QueryResult<usize> {
+        use crate::infrastructures::database::schema::informations::dsl;
+
+        let conn = &mut connection::establish_connection();
+    
+        delete(dsl::informations.find(information_id.get()))
+            .execute(conn)
+    }  
 }

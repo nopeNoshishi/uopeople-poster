@@ -25,14 +25,14 @@ pub fn get_documents() -> QueryResult<Vec<InformationEntity>> {
 }
 
 pub fn update_document(
-    update_id: i64, new_url: Option<String>, new_tag: Option<String>, new_title: Option<String>,
+    update_id: i64, new_url: String, new_tag: String, new_title: Option<String>,
 ) -> QueryResult<InformationEntity> {
     use crate::infrastructures::database::schema::informations::dsl;
 
     let conn = &mut connection::establish_connection();
         
     update(dsl::informations.find(update_id))
-        .set((dsl::url.eq(new_url.unwrap()), dsl::tag.eq(new_tag.unwrap()), dsl::title.eq(new_title.unwrap())))
+        .set((dsl::url.eq(new_url), dsl::tag.eq(new_tag), dsl::title.eq(new_title.unwrap())))
         .get_result(conn)
 }
 
