@@ -1,5 +1,4 @@
 use axum::{
-    response,
     response::IntoResponse,
     Json,
     body::{boxed, Body, BoxBody},
@@ -7,28 +6,14 @@ use axum::{
 };
 use tower::ServiceExt;
 use tower_http::services::ServeDir;
-use serde::Deserialize;
 
-// use super::response::*;
 
-use diesel::prelude::*;
-use diesel::{insert_into, delete, update};
-use crate::infrastructures::*;
+use tracing::log::{info, error};
 
-use crate::infrastructures::repository::users::{User, NewUser};
-use crate::infrastructures::database::schema::users::dsl::*;
-
-#[derive(Deserialize)]
-pub struct LectureRequest {
-    url: String,
-    tags: String
-}
-
-#[derive(Deserialize)]
-pub struct UserReq {
-    name: String,
-    email: String
-}
+use crate::infrastructures::repository::informations::{NewInformationEntity};
+use crate::usecase::informations::*;
+use super::response::*;
+use super::request::*;
 
 pub async fn index(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, String)> {
     let res = get_static_file(uri.clone()).await?;
@@ -60,119 +45,6 @@ async fn get_static_file(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, Str
     }
 }
 
-pub async fn show_users() -> impl IntoResponse  {
-
-    let content = serde_json::json!({
-        "message": "OK".to_string()
-    });
-
-    let connection = &mut connection::establish_connection();
-    let results = users
-        .load::<User>(connection)
-        .expect("Error loading posts");
-
-    println!("Displaying {} posts", results.len());
-    for user in results {
-        println!("{}", user.name);
-        println!("--------------");
-        println!("{}", user.email);
-    }
-
-
-    Json(content)
-}
-
-
-pub async fn store(Json(request): Json<UserReq>) -> impl IntoResponse  {
-
-    let entity = NewUser::new(request.name, request.email);
-
-    let connection = &mut connection::establish_connection();
-    
-    
-    let result = insert_into(users)
-        .values(entity)
-        .execute(connection);
-
-    match result {
-        Ok(_) => return (
-            StatusCode::OK,
-            "OK"
-        ),
-        Err(err) => {
-            eprintln!("{:?}", err);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Something went wrong..."
-            )
-        }
-    }
-}
-
-pub async fn delete_user(Json(request): Json<UserReq>) -> impl IntoResponse  {
-
-    // let entity = NewUser::new(request.name, request.email);
-
-    let connection = &mut connection::establish_connection();
-
-    let data = users.select(id).filter(name.eq(request.name))
-        .first::<i32>(connection);
-
-    match data {
-        Ok(num) => {
-            let result = delete(users.filter(id.eq(num)))
-                .execute(connection);
-
-            match result {
-                Ok(_) => return (
-                    StatusCode::OK,
-                    "OK"
-                ),
-                Err(err) => {
-                    eprintln!("{:?}", err);
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Something went wrong..."
-                    )
-                }
-            }
-        },
-        Err(err) => {
-            eprintln!("{:?}", err);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Something went wrong..."
-            )
-        }
-    }
-
-
-
-}
-
-pub async fn update_user(Json(request): Json<UserReq>) -> impl IntoResponse  {
-
-    let connection = &mut connection::establish_connection();
-        
-    let result = update(users.find(1))
-        .set(name.eq("newname"))
-        .get_result::<User>(connection);
-
-    match result {
-        Ok(_) => return (
-            StatusCode::OK,
-            "OK"
-        ),
-        Err(err) => {
-            eprintln!("{:?}", err);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Something went wrong..."
-            )
-        }
-    }
-}
-
 pub async fn healthcheck() -> impl IntoResponse {
 
     let content = "Thank you";
@@ -180,11 +52,88 @@ pub async fn healthcheck() -> impl IntoResponse {
     Json(content)
 }
 
-// pub async fn update() -> impl IntoResponse {
+pub async fn insert_new_info(Json(request): Json<InfoRequest>) ->impl IntoResponse {
 
-//     let content = serde_json::json!({
-//         "message": "OK".to_string()
-//     });
+    let new_info = NewInformationEntity {
+        url: request.url,
+        tag: request.tag,
+        title: request.title
+    };
 
-//     Json(content)
-// }
+    let result = post_document(&new_info);
+
+    match result {
+        Ok(info_id) => return (
+            StatusCode::OK,
+            Json(info_id)
+        ),
+        Err(err) => {
+            eprintln!("{:?}", err);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(0)
+            )
+        }
+    }
+}
+
+pub async fn get_infos() -> Result<impl IntoResponse, impl IntoResponse>  {
+
+    let results = get_documents();
+
+    match results {
+        Ok(infos) => { 
+
+            let tmp: Vec<JsonInfoResponse> = infos.iter().map(|info| JsonInfoResponse::from(info.clone()) ).collect();
+            
+            info!("{:?}", infos);
+
+            Ok ((StatusCode::OK,  Json(tmp) ))
+        }
+        Err(err) => {
+            error!("{:?}", err);
+            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+        }
+    }
+}
+
+pub async fn update_info(Json(request): Json<InfoUpdateRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
+
+    let result = update_document(
+        request.id, request.url, request.tag, request.title
+    );
+
+    match result {
+        Ok(info) => { 
+
+            let json = JsonInfoResponse::from(info);
+
+            let tmp: String = format!("Update id: {} -> {:?}", request.id, json);
+            info!("{}", tmp);
+            
+            Ok ((StatusCode::OK,  Json(json)))
+        }
+        Err(err) => {
+            error!("{:?}", err);
+            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+        }
+    }
+}
+
+pub async fn delete_info(Json(request): Json<InfoDeleteRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
+
+    let result = delete_document(request.id);
+
+    match result {
+        Ok(num) => { 
+
+            info!("{}", num);
+            
+            Ok ((StatusCode::OK,  Json(num)))
+        }
+        Err(err) => {
+            error!("{:?}", err);
+            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+        }
+    }
+}

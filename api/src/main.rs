@@ -3,6 +3,7 @@ extern crate diesel;
 mod domains;
 mod infrastructures;
 mod server;
+pub mod usecase;
 
 use std::net::SocketAddr;
 use tower_http::trace::{self, TraceLayer};

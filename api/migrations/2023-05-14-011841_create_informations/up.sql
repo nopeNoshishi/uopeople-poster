@@ -1,0 +1,9 @@
+-- Your SQL goes here
+
+CREATE TABLE informations (
+    id BIGSERIAL NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL,
+    tag VARCHAR(10),
+    title VARCHAR(100),
+    create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);

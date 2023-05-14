@@ -5,6 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
+import Url exposing (Protocol(..))
+import Json.Encode as Encode
 
 main: Program () Model Msg
 main =
@@ -39,8 +41,10 @@ initForm =
 type Msg
   = UpdateUrl String
   | UpdateTag String
+  | Check
   | Submit
   | GotTest (Result Http.Error String)
+  | GotId  (Result Http.Error String)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -74,10 +78,25 @@ update msg model =
       in
       ( newModel, Cmd.none )
 
-    Submit ->
+    Check ->
       ( model, getMessage model )
 
+    Submit ->
+      ( model, postInforation model )
+
     GotTest result ->
+      case result of
+        Ok message ->
+          let
+            newModel =
+              { form = initForm, message = message}
+          in
+          ( newModel, Cmd.none )
+
+        Err _ ->
+          ( model, Cmd.none )
+  
+    GotId result ->
       case result of
         Ok message ->
           let
@@ -105,6 +124,7 @@ view model =
     ]
     [ viewInput "url" "URL" model.form.url UpdateUrl 
     , viewInput "tag" "Tag" model.form.tag UpdateTag
+    , button [ onClick Check ] [ text "Check"]
     , button [ onClick Submit ] [ text "Submit"]
     , div [] [ text (model.message) ] 
     ]
@@ -120,3 +140,23 @@ getMessage model =
     { url = "http://localhost:8080/api/v1/healthcheck?" ++ model.form.tag
     , expect = Http.expectString GotTest
     }
+
+postInforation : Model ->Cmd Msg
+postInforation model =
+  let 
+    json = formJson model
+  
+  in
+  Http.post
+    {
+      url = "http://localhost:8080/api/v1/post_info"
+    , body = Http.jsonBody json
+    , expect = Http.expectString GotId
+    }
+
+formJson : Model -> Encode.Value
+formJson model =
+    Encode.object
+        [ ( "url", Encode.string model.form.url )
+        , ( "tag", Encode.string model.form.tag )
+        ]

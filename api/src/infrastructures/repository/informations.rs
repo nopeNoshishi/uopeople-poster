@@ -1,20 +1,23 @@
-// use super::super::database::schema::*;
-// use super::super::connection;
-// use crate::domains::informations::{Information, InformationId, InformationRepository};
-// use diesel::prelude::*;
-// use diesel::QueryDsl;
-// use anyhow::Result;
+use super::super::database::schema::*;
+use diesel::prelude::*;
+use chrono::NaiveDateTime;
 
-// //
-// // Entity
-// //
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Insertable)]
+#[table_name = "informations"]
+pub struct NewInformationEntity {
+    pub url: String,
+    pub tag: String,
+    pub title: Option<String>,
+}
 
-// #[derive(Debug, Clone, Eq, PartialEq, Hash, Insertable)]
-// #[table_name = informations]
-// pub struct NewInformationEntity {
-//     pub url: String,
-//     pub tag: String,
-// }
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Queryable)]
+pub struct InformationEntity {
+    pub id: i64,
+    pub url: String,
+    pub tag: Option<String>,
+    pub title: Option<String>,
+    pub created_at: NaiveDateTime
+}
 
 // impl NewInformationEntity {
 //     fn from(model: &Information) -> Self {
