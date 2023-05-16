@@ -5,7 +5,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Url exposing (Protocol(..))
 import Json.Encode as Encode
 import Json.Decode as Decode
 
@@ -24,6 +23,7 @@ type alias Model =
   { form: Form
   , message: String
   , informations : List Information
+  , selectedInformation : Maybe Information
   , isPopupOpen : Bool
   }
 
@@ -40,11 +40,19 @@ type alias Information =
     , title : String
     }
 
+type MyError
+    = EmptyString
+
 init : () -> (Model, Cmd Msg)
 init _ =
   let
     model =
-      { form = initForm, message = "", informations = [] , isPopupOpen = False }
+      { form = initForm
+      , message = ""
+      , informations = [] 
+      , selectedInformation = Nothing
+      , isPopupOpen = False 
+      }
   in
   ( model, getInformation )
   
@@ -67,7 +75,7 @@ type Msg
   | GotTest (Result Http.Error String)
   | GotId  (Result Http.Error String)
   | GotInfos (Result Http.Error (List Information))
-  | EditInformation Information
+  | EditInfo Information
   | CancelEdit
 
 
@@ -133,8 +141,8 @@ update msg model =
         Err _ ->
           ( model, Cmd.none )
     
-    EditInformation information ->
-      ( { model | isPopupOpen = True }, Cmd.none )
+    EditInfo information ->
+      ( { model | selectedInformation = Just information, isPopupOpen = True }, Cmd.none )
 
     CancelEdit ->
       ( { model | isPopupOpen = False }, Cmd.none )
@@ -148,62 +156,57 @@ subscriptions _ =
 view : Model -> Html Msg
 view model =
   div [] 
-    [ div [style "display" "flex"
-        , style "align-items" "center"
-        , style "height" "50vh"
-        , style "flex-direction" "column"
-        ] 
-        ( viewInformatios model model.informations )
-    , div [ style "display" "flex"
-          , style "align-items" "center"
-          , style "height" "50vh"
-          , style "flex-direction" "column"
-        ]
+    [ div [ class "card-group" ] 
+      ( List.map (viewCard model) model.informations 
+
+      )
+    , div [ class "input-block" ]
         [ viewInput "url" "URL" model.form.url UpdateUrl 
         , br [] []
         , viewInput "tag" "Tag" model.form.tag UpdateTag
         , br [] []
         , viewInput "title" "Title" model.form.title UpdateTitle
-        , br [] []
-        , button [ onClick Check ] [ text "Check"]
-        , br [] []
+        ]
+    , div [ class "button-block" ] 
+        [ button [ onClick Check ] [ text "Check"]
         , button [ onClick Submit ] [ text "Submit"]
         , br [] []
-        , button [ onClick GetInfos ] [ text "Get"]
-        , br [] []
-        , div [] [ text (model.message) ] 
       ]
+    , if model.isPopupOpen then
+        case model.selectedInformation of
+          Just selected ->
+            div [ class "edit-card" ]
+                [ div [] [ text selected.title ]
+                , br [] []
+                , div [] [ text selected.tag ]
+                , br [] []
+                , button [ onClick CancelEdit ] [ text "編集完了" ] 
+                , br [] []
+                , button [ onClick CancelEdit ] [ text "キャンセル" ] ]
+          Nothing ->
+            text ""
+      else
+          text ""
     ]
     
-
-
-
+viewCard : Model -> Information -> Html Msg
+viewCard model information =
+    div [ class "card" ] 
+        [ div [ class "card__imgframe" ]
+            [ img [ src "uopeople-logo.png", class "card__img", width 50, height 25 ] []
+            ]
+        , div [ class "card__textbox" ] 
+            [ div [ class "card__titletext" ] [ text information.title ]
+            , div [ class "card__overviewtext" ] [ text information.tag ]
+            , button [ onClick (EditInfo information) ] [ text "編集" ]
+            , button [ onClick (DeleteInfo information) ] [ text "削除" ]
+            , a [ href information.url ] [ text "記事を見る" ]
+            ]
+        ]
+    
 viewInput : String -> String -> String -> (String -> msg) -> Html msg
 viewInput t p v toMsg =
   input [ type_ t, placeholder p, value v, onInput toMsg, style "margin-bottom" "10px"] []
-
-viewInformatios : Model -> List Information -> List ( Html Msg )
-viewInformatios model informations = 
-  List.map
-    (\information ->
-      p [] 
-        [ a [ href information.url, target "_blank" ]
-          [ text 
-            (
-              "Title: " ++ information.title
-            )
-          ]
-        , button [ onClick (DeleteInfo information) ] [ text "削除" ]
-        , button [ onClick (EditInformation information) ] [ text "編集" ]
-        , if model.isPopupOpen then
-            div [ class "edit-card" ]
-              [ button [ onClick CancelEdit ] [ text "キャンセル" ] ]
-          else
-            text ""
-        ]
-    )
-    informations
-
 
 getMessage : Cmd Msg
 getMessage =
@@ -213,7 +216,7 @@ getMessage =
       [ Http.header "Access-Control-Allow-Origin" "*"
       , Http.header "Content-Type" "application/json"
       ]
-    , url = "http://localhost:8080/api/v1/healthcheck"
+    , url = "http://localhost:8080/healthcheck"
     , body = Http.emptyBody
     , expect = Http.expectString GotTest
     , timeout = Nothing
@@ -228,7 +231,7 @@ postInforation model =
   in
   Http.post
     {
-      url = "http://localhost:8080/api/v1/post_info"
+      url = "http://localhost:8080/api/v1/info/create"
     , body = Http.jsonBody json
     , expect = Http.expectString GotId
     }
@@ -241,7 +244,7 @@ getInformation =
       [ Http.header "Access-Control-Allow-Origin" "*"
       , Http.header "Content-Type" "application/json"
       ]
-    , url = "http://localhost:8080/api/v1/all_infos"
+    , url = "http://localhost:8080/api/v1/info/all"
     , body = Http.emptyBody
     , expect = Http.expectJson GotInfos infosDecoder
     , timeout = Nothing
@@ -259,7 +262,7 @@ deleteInformation information =
     , headers = 
       [ Http.header "Access-Control-Allow-Origin" "*"
       ]
-    , url = "http://localhost:8080/api/v1/delete_info"
+    , url = "http://localhost:8080/api/v1/info/delete"
     , body = Http.jsonBody json
     , expect = Http.expectString GotId
     , timeout = Nothing

@@ -1,9 +1,11 @@
 use crate::infrastructures::repository::informations::*;
+use crate::infrastructures::*;
+
 use diesel::{insert_into, update, delete};
 use diesel::prelude::*;
 use diesel::result::QueryResult;
 use diesel::RunQueryDsl;
-use crate::infrastructures::*;
+
 
 pub fn post_document(info: &NewInformationEntity) -> QueryResult<i64> {
     use crate::infrastructures::database::schema::informations::dsl;

@@ -1,54 +1,19 @@
+//! informations ハンドラー
+//! 
+//! 各リクエスト(CRUD)のインターフェースです。
+
 use axum::{
     response::IntoResponse,
     Json,
-    body::{boxed, Body, BoxBody},
-    http::{Request, Response, StatusCode, Uri},
+    http::StatusCode,
 };
-use tower::ServiceExt;
-use tower_http::services::ServeDir;
-
 
 use tracing::log::{info, error};
 
 use crate::infrastructures::repository::informations::{NewInformationEntity};
-use crate::usecase::informations::*;
-use super::response::*;
-use super::request::*;
-
-pub async fn index(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, String)> {
-    let res = get_static_file(uri.clone()).await?;
-
-    if res.status() == StatusCode::NOT_FOUND {
-
-        match format!("{}.html", uri).parse() {
-            Ok(uri_html) => get_static_file(uri_html).await,
-            Err(_) => Err((StatusCode::INTERNAL_SERVER_ERROR, "Invalid URI".to_string())),
-        }
-    } else {
-        Ok(res)
-    }
-}
-
-
-async fn get_static_file(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, String)> {
-    info!("{}", uri);
-    let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
-
-    match ServeDir::new("public").oneshot(req).await {
-        Ok(res) => Ok(res.map(boxed)),
-        Err(err) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", err),
-        )),
-    }
-}
-
-pub async fn healthcheck() -> impl IntoResponse {
-
-    let content = "Thank you";
-
-    Json(content)
-}
+use crate::application::informations::*;
+use super::super::response::informations::*;
+use super::super::request::informations::*;
 
 pub async fn insert_new_info(Json(request): Json<InfoRequest>) ->impl IntoResponse {
 
