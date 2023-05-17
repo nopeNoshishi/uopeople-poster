@@ -1,3 +1,4 @@
+# Setting
 build:
 	docker compose build --force-rm
 build-nocache:
@@ -19,11 +20,15 @@ logs:
 logs-watch:
 	docker compose logs --follow
 
+# Frontend Build
+elm:
+	cd api/frontend && elm make src/Main.elm --output public/main.js --optimize
+
 # API
 web:
 	docker compose exec web bash
 
-# Mysql
+# Postgres
 db:
 	docker compose exec db bash
 
