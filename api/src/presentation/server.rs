@@ -1,22 +1,15 @@
 //! Server ビルド
-//! 
+//!
 //! 各ミドルウェアと各ルータをビルドし起動する。
 
-use super::router::*;
 use super::middleware::*;
+use super::router::*;
 
+use axum::{response::IntoResponse, routing::*, Json, Router};
 use std::net::SocketAddr;
-use axum::{
-    routing::*,
-    Router,
-    response::IntoResponse,
-    Json,
-};
-use tower_http::classify::{SharedClassifier, ServerErrorsAsFailures};
 
 #[tokio::main]
 pub async fn run() {
-
     tracing_subscriber::fmt()
         .with_target(false)
         .compact()
@@ -24,11 +17,11 @@ pub async fn run() {
 
     let app = Router::new()
         .route("/healthcheck", get(healthcheck))
+        .merge(basic::basic())
         .merge(staticfile::static_roouter())
         .nest("/api/v1", informations::informations_roouter())
-        .layer(trace_log::trace_middleware::<SharedClassifier<ServerErrorsAsFailures>>());
-    
-        
+        .layer(trace_log::trace_middleware());
+
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::info!("listening on localhost;8080 -> {}", addr);
 
@@ -40,7 +33,6 @@ pub async fn run() {
 }
 
 pub async fn healthcheck() -> impl IntoResponse {
-
     let content = "Thank you";
 
     Json(content)

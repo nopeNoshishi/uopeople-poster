@@ -1,5 +1,5 @@
 /node_modules
-/public
+/public/main.js
 /.parcel-cache
 /elm-stuff
 package-lock.json

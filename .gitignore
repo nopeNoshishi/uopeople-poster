@@ -1,4 +1,4 @@
-*.http
+/.vscode
 /postgres
 .DS_Store
 /tmp

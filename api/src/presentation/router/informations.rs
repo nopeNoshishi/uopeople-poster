@@ -1,17 +1,12 @@
-//! informations CRUD ルーティング
+//! informations ルーティング
 //!  
-//! 基本的な
+//! CRUDを行うインターフェースを提供しています。
 
 use super::super::handler::informations::*;
 
-use axum::{
-    routing::*,
-    Router,
-};
-
+use axum::{routing::*, Router};
 
 pub fn informations_roouter() -> Router {
-
     Router::new()
         .route("/info/create", post(insert_new_info))
         .route("/info/all", get(get_infos))

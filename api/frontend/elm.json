@@ -11,7 +11,8 @@
             "elm/html": "1.0.0",
             "elm/http": "2.0.0",
             "elm/json": "1.1.3",
-            "elm/url": "1.0.0"
+            "elm/url": "1.0.0",
+            "emilianobovetti/elm-toast": "1.1.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
@@ -23,10 +24,5 @@
     "test-dependencies": {
         "direct": {},
         "indirect": {}
-    },
-    "output": {
-        "main": {
-            "html": "public/index.html"
-        }
     }
 }

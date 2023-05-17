@@ -1,100 +1,101 @@
 //! informations ハンドラー
-//! 
-//! 各リクエスト(CRUD)のインターフェースです。
+//!
+//! 各リクエスト(CRUD)のリクエストとリスポンスをでドメインオブジェクトに
+//! マッピングしてアプリケーションに渡します。
 
-use axum::{
-    response::IntoResponse,
-    Json,
-    http::StatusCode,
-};
-
-use tracing::log::{info, error};
-
-use crate::infrastructures::repository::informations::{NewInformationEntity};
-use crate::application::informations::*;
-use super::super::response::informations::*;
 use super::super::request::informations::*;
+use super::super::response::informations::*;
+use crate::application::informations::*;
+use crate::domains::repository::informations::*;
 
-pub async fn insert_new_info(Json(request): Json<InfoRequest>) ->impl IntoResponse {
+use anyhow::Result;
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use tracing::log::{debug, error, info};
 
-    let new_info = NewInformationEntity::from(request);
+pub async fn insert_new_info(
+    Json(request): Json<InfoRequest>,
+) -> Result<impl IntoResponse, impl IntoResponse> {
+    let new_info = Information::from(request);
+    debug!("{:?}", new_info);
 
-    let result = post_document(&new_info);
+    let result = create(&new_info);
+    debug!("{:?}", result);
 
     match result {
-        Ok(info_id) => return (
-            StatusCode::OK,
-            Json(info_id)
-        ),
+        Ok(_) => {
+            let response = JsonMessage {
+                message: String::from("新しい記事を追加しました！"),
+            };
+            Ok((StatusCode::OK, Json(response)))
+        }
         Err(err) => {
-            eprintln!("{:?}", err);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(0)
-            )
+            error!("{:?}", err);
+            Err((StatusCode::INTERNAL_SERVER_ERROR, Json("Error in Inseting")))
         }
     }
 }
 
-pub async fn get_infos() -> Result<impl IntoResponse, impl IntoResponse>  {
-
-    let results = get_documents();
+pub async fn get_infos() -> Result<impl IntoResponse, impl IntoResponse> {
+    let results = read_all();
+    info!("{:?}", results);
 
     match results {
-        Ok(infos) => { 
-
-            let tmp: Vec<JsonInfoResponse> = infos.iter().map(|info| JsonInfoResponse::from(info.clone()) ).collect();
-            
-            info!("{:?}", infos);
-
-            Ok ((StatusCode::OK,  Json(tmp) ))
+        Ok(infos) => {
+            let tmp: Vec<JsonInfoResponse> = infos
+                .iter()
+                .map(|info| JsonInfoResponse::from(info.clone()))
+                .collect();
+            Ok((StatusCode::OK, Json(tmp)))
         }
         Err(err) => {
             error!("{:?}", err);
-            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+            Err((StatusCode::INTERNAL_SERVER_ERROR, "Error in Reading all"))
         }
     }
 }
 
-pub async fn update_info(Json(request): Json<InfoUpdateRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
+pub async fn update_info(
+    Json(request): Json<InfoUpdateRequest>,
+) -> Result<impl IntoResponse, impl IntoResponse> {
+    let new_info = Information::from(request);
+    debug!("{:?}", new_info);
 
-    // let new_entity = NewInformationEntity::from(request);
-    let result = update_document(
-        request.id, request.url, request.tag, request.title
-    );
+    let result = update(&new_info);
+    debug!("{:?}", result);
 
     match result {
-        Ok(info) => { 
-
-            let json = JsonInfoResponse::from(info);
-            info!("Inserted : {:?}", json);
-            
-            Ok ((StatusCode::OK,  Json(json)))
+        Ok(_) => {
+            let response = JsonMessage {
+                message: String::from("記事を更新しました！"),
+            };
+            Ok((StatusCode::OK, Json(response)))
         }
         Err(err) => {
             error!("{:?}", err);
-            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+            Err((StatusCode::INTERNAL_SERVER_ERROR, "Error in  Updating"))
         }
     }
 }
 
-pub async fn delete_info(Json(request): Json<InformationIdRequest>) -> Result<impl IntoResponse, impl IntoResponse>  {
+pub async fn delete_info(
+    Json(request): Json<InformationIdRequest>,
+) -> Result<impl IntoResponse, impl IntoResponse> {
+    let info_id = InformationId::from(request);
+    debug!("{:?}", info_id);
 
-    let result = delete_document(request.id);
+    let result = delete(&info_id);
+    debug!("{:?}", result);
 
     match result {
-        Ok(num) => { 
-            match num {
-                1 => info!("Delete!"),
-                _ => info!("No content!"),
-            }
-            
-            
-            Ok ((StatusCode::OK,  Json(num)))
+        Ok(_) => {
+            let response = JsonMessage {
+                message: String::from("記事を削除しました！"),
+            };
+            Ok((StatusCode::OK, Json(response)))
         }
         Err(err) => {
             error!("{:?}", err);
-            Err (( StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong..."))
+            Err((StatusCode::INTERNAL_SERVER_ERROR, "Error in  Deleting"))
         }
     }
 }

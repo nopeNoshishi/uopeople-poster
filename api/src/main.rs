@@ -1,9 +1,9 @@
 extern crate diesel;
 
+mod application;
 mod domains;
 mod infrastructures;
 mod presentation;
-mod application;
 
 use presentation::server;
 

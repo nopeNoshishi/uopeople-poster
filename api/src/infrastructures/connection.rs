@@ -1,9 +1,13 @@
+//!　インフラ Database Connection
+//!
+//! 環境変数からコネクションを形成しています。
+
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use std::env;
 
+// TODO: connection poolを利用する
 pub fn establish_connection() -> PgConnection {
-
     let database = "postgres";
     let user_name = env::var("POSTGRES_USER").unwrap();
     let password = env::var("POSTGRES_PASSWORD").unwrap();
@@ -11,13 +15,8 @@ pub fn establish_connection() -> PgConnection {
     let db_name = env::var("POSTGRES_DB").unwrap();
 
     let database_url = format!(
-        "{}://{}:{}@db:{}/{}", 
-        database, 
-        user_name,
-        password,
-        port,
-        db_name
+        "{}://{}:{}@db:{}/{}",
+        database, user_name, password, port, db_name
     );
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|error| panic!("{}", error))
+    PgConnection::establish(&database_url).unwrap_or_else(|error| panic!("{}", error))
 }

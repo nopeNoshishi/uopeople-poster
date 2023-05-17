@@ -1,0 +1,130 @@
+/* Edit card */
+.edit-card {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    display: inline-block;
+    height: 300px;
+    width: 300px;
+    border-radius: 5px;
+    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);
+    background-color: #a3c8c2;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Input block */
+.input-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* Button block */
+.button-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: #000000;
+}
+
+/* Information card */
+.card-group{
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80%;
+  max-height: 50%;
+  width: 300;
+  height: 15%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.card-group > :nth-child(n){
+  margin-left: 10px;
+}
+.card-group > :nth-child(n){
+  margin-top: 10px;
+}
+.card{
+  width: calc((100% - 20px * 4) / 5);
+  height: 200;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,.2)
+}
+.card__imgframe{
+  width: 100%;
+  height: 35%;
+  background: #bff585;
+  box-sizing: border-box;
+  text-align: center;
+}
+.card__img{
+  object-fit: contain;
+  width: 90%;
+  height: 90%;
+}
+.card__textbox{
+  width: 100%;
+  height: 50%;
+  padding: 20px 18px;
+  background: #fff;
+  box-sizing: border-box;
+}
+.card__textbox > * + *{
+  margin-top: 10px;
+}
+.card__titletext{
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 125%;
+}
+.card__overviewtext{
+  font-size: 12px;
+  line-height: 150%;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  display: flex;
+  transform: translate(-50%, -50%);
+  max-width: 200px;
+  padding: 10px;
+  top: 10%;
+  right: 10%;
+  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);
+  animation: anime 3s ease 1 normal;
+
+}
+@keyframes anime {
+  16.666% { transform: translateX(0); }
+  83.333% { transform: translateX(0); }
+}
+
+/* Header */
+.heading {
+	font-size: 26px;
+}
+.heading span {
+	display: flex;
+	align-items: center;
+	color: #498ee0;
+	font-size: 18px;
+	text-transform: uppercase;
+}
+.heading span::before {
+	content: '';
+	display: inline-block;
+	margin-right: 20px;
+	width: 40px;
+	height: 1px;
+	background-color: #498ee0;
+}
